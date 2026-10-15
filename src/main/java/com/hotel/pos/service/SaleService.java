@@ -22,11 +22,17 @@ public class SaleService {
 
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
+    private final InventoryService inventoryService;
 
-    public SaleService(SaleRepository saleRepository, ProductRepository productRepository) {
+    public SaleService(SaleRepository saleRepository, ProductRepository productRepository,
+                       InventoryService inventoryService) {
         this.saleRepository = saleRepository;
         this.productRepository = productRepository;
+        this.inventoryService = inventoryService;
     }
+
+    /** Ligne de vente memorisee pour appliquer la sortie de stock. */
+    private record VenteLigne(Product product, int quantite) {}
 
     @Transactional
     public SaleResponse createSale(SaleRequest req, String caissier) {
@@ -46,6 +52,7 @@ public class SaleService {
         sale.setNumeroTicket(genererNumeroTicket());
 
         List<SaleItem> items = new ArrayList<>();
+        List<VenteLigne> lignes = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
         for (SaleItemRequest ir : req.getItems()) {
             if (ir.getQuantite() <= 0) continue;
@@ -63,6 +70,7 @@ public class SaleService {
             BigDecimal sousTotal = product.getPrix().multiply(BigDecimal.valueOf(ir.getQuantite()));
             item.setSousTotal(sousTotal);
             items.add(item);
+            lignes.add(new VenteLigne(product, ir.getQuantite()));
             total = total.add(sousTotal);
         }
         if (items.isEmpty()) {
@@ -72,18 +80,38 @@ public class SaleService {
         sale.setMontantTotal(total);
 
         Sale saved = saleRepository.save(sale);
+
+        // Sortie de stock pour chaque article vendu
+        String motif = "Vente " + saved.getNumeroTicket();
+        for (VenteLigne l : lignes) {
+            inventoryService.appliquerVente(l.product(), l.quantite(), motif, caissier);
+        }
+
         return toResponse(saved);
     }
 
     @Transactional
-    public SaleResponse annulerVente(Long id) {
+    public SaleResponse annulerVente(Long id, String utilisateur) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vente introuvable"));
         if (sale.isCloture()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Impossible d'annuler : caisse deja cloturee pour ce ticket");
         }
+        if (sale.isAnnule()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette vente est deja annulee");
+        }
         sale.setAnnule(true);
-        return toResponse(saleRepository.save(sale));
+        Sale saved = saleRepository.save(sale);
+
+        // Retour en stock des articles annules
+        String motif = "Annulation " + saved.getNumeroTicket();
+        for (SaleItem it : saved.getItems()) {
+            if (it.getProductId() == null) continue;
+            productRepository.findById(it.getProductId())
+                    .ifPresent(p -> inventoryService.appliquerAnnulation(p, it.getQuantite(), motif, utilisateur));
+        }
+
+        return toResponse(saved);
     }
 
     public List<SaleResponse> getVentesEntre(LocalDateTime debut, LocalDateTime fin) {

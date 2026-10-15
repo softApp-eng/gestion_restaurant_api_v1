@@ -11,4 +11,9 @@ public class ProductDto {
     private BigDecimal prix;
     private Category categorie;
     private boolean actif;
+
+    // ---- Inventaire ----
+    private int stock;
+    private int seuilAlerte;
+    private boolean enAlerte;
 }

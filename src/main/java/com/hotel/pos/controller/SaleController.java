@@ -45,7 +45,7 @@ public class SaleController {
 
     @PatchMapping("/{id}/annuler")
     public SaleResponse annuler(@RequestHeader("X-Auth-Token") String token, @PathVariable Long id) {
-        authService.requireAuth(token); // caissier ou admin peut annuler avant cloture
-        return saleService.annulerVente(id);
+        var user = authService.requireAuth(token); // caissier ou admin peut annuler avant cloture
+        return saleService.annulerVente(id, user.getUsername());
     }
 }

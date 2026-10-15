@@ -28,4 +28,14 @@ public class Product {
 
     @Column(nullable = false)
     private boolean actif = true;
+
+    // ---- Inventaire ----
+
+    /** Quantite disponible en stock. */
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private int stock = 0;
+
+    /** Seuil a partir duquel le produit est signale "en alerte". */
+    @Column(nullable = false, columnDefinition = "int default 10")
+    private int seuilAlerte = 10;
 }

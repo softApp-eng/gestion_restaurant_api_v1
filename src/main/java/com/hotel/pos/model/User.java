@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -24,4 +26,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    /** Un compte desactive ne peut plus se connecter. */
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean actif = true;
+
+    private LocalDateTime dateCreation;
 }

@@ -27,8 +27,9 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest req) {
-        // Recherche de l'utilisateur dont le mot de passe correspond au code fourni
+        // Recherche de l'utilisateur ACTIF dont le mot de passe correspond au code fourni
         User user = userRepository.findAll().stream()
+                .filter(User::isActif)
                 .filter(u -> encoder.matches(req.getCode(), u.getPassword()))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Code invalide"));

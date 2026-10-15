@@ -30,6 +30,8 @@ public class ProductService {
         p.setPrix(dto.getPrix());
         p.setCategorie(dto.getCategorie());
         p.setActif(true);
+        p.setStock(Math.max(0, dto.getStock()));
+        p.setSeuilAlerte(dto.getSeuilAlerte() > 0 ? dto.getSeuilAlerte() : 10);
         return toDto(productRepository.save(p));
     }
 
@@ -66,6 +68,9 @@ public class ProductService {
         dto.setPrix(p.getPrix());
         dto.setCategorie(p.getCategorie());
         dto.setActif(p.isActif());
+        dto.setStock(p.getStock());
+        dto.setSeuilAlerte(p.getSeuilAlerte());
+        dto.setEnAlerte(p.getStock() <= p.getSeuilAlerte());
         return dto;
     }
 }
