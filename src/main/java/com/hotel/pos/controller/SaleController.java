@@ -25,7 +25,7 @@ public class SaleController {
 
     @PostMapping
     public SaleResponse create(@RequestHeader("X-Auth-Token") String token, @RequestBody SaleRequest req) {
-        var user = authService.requireAuth(token);
+        var user = authService.requireAnyRole(token, Role.ADMIN, Role.CAISSIER);
         return saleService.createSale(req, user.getUsername());
     }
 
@@ -45,7 +45,8 @@ public class SaleController {
 
     @PatchMapping("/{id}/annuler")
     public SaleResponse annuler(@RequestHeader("X-Auth-Token") String token, @PathVariable Long id) {
-        var user = authService.requireAuth(token); // caissier ou admin peut annuler avant cloture
+        // caissier ou admin peut annuler avant cloture
+        var user = authService.requireAnyRole(token, Role.ADMIN, Role.CAISSIER);
         return saleService.annulerVente(id, user.getUsername());
     }
 }

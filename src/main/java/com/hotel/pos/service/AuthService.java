@@ -60,4 +60,13 @@ public class AuthService {
         }
         return user;
     }
+
+    /** Autorise l'acces si l'utilisateur possede l'un des roles fournis. */
+    public User requireAnyRole(String token, Role... roles) {
+        User user = requireAuth(token);
+        for (Role r : roles) {
+            if (user.getRole() == r) return user;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acces refuse");
+    }
 }

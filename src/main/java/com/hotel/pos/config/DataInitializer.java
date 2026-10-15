@@ -37,6 +37,12 @@ public class DataInitializer implements CommandLineRunner {
             // Le username stocké sert de nom d'affichage, et le mot de passe correspond au code saisi
             userRepository.save(new User(null, "Administrateur", encoder.encode("admin123"), Role.ADMIN, true, LocalDateTime.now()));
             userRepository.save(new User(null, "Caissier", encoder.encode("caisse123"), Role.CAISSIER, true, LocalDateTime.now()));
+            userRepository.save(new User(null, "Reception", encoder.encode("recep123"), Role.RECEPTIONNISTE, true, LocalDateTime.now()));
+        }
+
+        // Garantit la presence d'un compte receptionniste (bases existantes)
+        if (userRepository.findAll().stream().noneMatch(u -> u.getRole() == Role.RECEPTIONNISTE)) {
+            userRepository.save(new User(null, "Reception", encoder.encode("recep123"), Role.RECEPTIONNISTE, true, LocalDateTime.now()));
         }
 
         if (productRepository.count() == 0) {
